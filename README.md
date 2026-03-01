@@ -1,6 +1,6 @@
 # emovi-mcp
 
-[![CI](https://github.com/your-user/emovi-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/your-user/emovi-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/Lalitronico/emovi-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Lalitronico/emovi-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/emovi-mcp)](https://pypi.org/project/emovi-mcp/)
 [![Python](https://img.shields.io/pypi/pyversions/emovi-mcp)](https://pypi.org/project/emovi-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -33,7 +33,7 @@ The ESRU-EMOVI 2023 survey, conducted by the Centro de Estudios Espinosa Yglesia
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-user/emovi-mcp.git
+git clone https://github.com/Lalitronico/emovi-mcp.git
 cd emovi-mcp
 
 # Create virtual environment

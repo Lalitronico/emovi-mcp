@@ -30,9 +30,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-user/emovi-mcp"
-Repository = "https://github.com/your-user/emovi-mcp"
-Issues = "https://github.com/your-user/emovi-mcp/issues"
+Homepage = "https://github.com/Lalitronico/emovi-mcp"
+Repository = "https://github.com/Lalitronico/emovi-mcp"
+Issues = "https://github.com/Lalitronico/emovi-mcp/issues"
 
 [project.optional-dependencies]
 dev = [
