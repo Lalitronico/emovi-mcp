@@ -178,10 +178,7 @@ emovi-mcp/
 │   ├── ci.yml                    # CI: pytest on Python 3.10/3.11/3.12
 │   └── publish.yml               # Publish to PyPI on release
 ├── scripts/
-│   ├── build_dictionary.py       # One-time dictionary builder
-│   └── validate_ceey.py          # Validate against CEEY 2025 reference
-├── validation/
-│   └── ceey_reference_values.json # CEEY reference matrices
+│   └── build_dictionary.py       # One-time dictionary builder
 ├── src/emovi_mcp/
 │   ├── __init__.py
 │   ├── __main__.py               # python -m emovi_mcp

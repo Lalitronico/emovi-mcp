@@ -13,6 +13,9 @@ env/
 *.dta
 *.xlsx
 *.xls
-src/emovi_mcp/data/dictionary.json
 .pytest_cache/
 .mypy_cache/
+
+# Non-public assets
+paper/
+validation/
