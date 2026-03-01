@@ -157,11 +157,11 @@ MOBILITY_DIMENSIONS: dict[str, dict] = {
         "labels": CLASE_LABELS,
         "description": "Movilidad ocupacional intergeneracional",
     },
-    "income_quintile": {
-        "origin_var": "quintile_origin",   # built at runtime from ingc_pc
-        "dest_var": "quintile_dest",       # built at runtime from ingc_pc
+    "wealth": {
+        "origin_var": "quintile_origin",   # built at runtime via PCA on assets
+        "dest_var": "quintile_dest",       # built at runtime via PCA on assets
         "labels": {1: "Q1 (mas pobre)", 2: "Q2", 3: "Q3", 4: "Q4", 5: "Q5 (mas rico)"},
-        "description": "Movilidad por quintiles de ingreso per capita",
+        "description": "Movilidad por quintiles de riqueza (indice PCA de activos)",
     },
 }
 

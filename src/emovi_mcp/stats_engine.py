@@ -51,18 +51,26 @@ def build_padres_edu(df: pd.DataFrame) -> pd.Series:
     return result
 
 
-def build_income_quintiles(
+def build_wealth_quintiles(
     df: pd.DataFrame, weight_col: str = WEIGHT_COL
 ) -> tuple[pd.Series, pd.Series]:
-    """Build origin and destination income quintiles.
+    """Build origin and destination wealth quintiles using PCA on household assets.
 
-    MVP: uses ingc_pc as proxy (MCA index requires Stata replication).
-    Returns (quintile_origin, quintile_dest) — both from ingc_pc for now.
+    Replicates CEEY methodology (.do lines 265-391):
+      - Constructs binary asset indicators for origin (age 14) and current households
+      - Runs PCA by cohort to produce comparable wealth indices
+      - Assigns weighted quintiles to each index
+
+    Returns (quintile_origin, quintile_dest).
     """
-    validate_column(df, "ingc_pc")
-    validate_column(df, weight_col)
-    quintiles = create_weighted_quintiles(df["ingc_pc"], df[weight_col], nq=5)
-    return quintiles, quintiles  # MVP: same variable for origin and dest
+    from emovi_mcp.helpers.wealth_index import compute_wealth_index
+
+    index_origin, index_current = compute_wealth_index(
+        df, cohort_col="cohorte", weight_col=weight_col
+    )
+    q_origin = create_weighted_quintiles(index_origin, df[weight_col], nq=5)
+    q_dest = create_weighted_quintiles(index_current, df[weight_col], nq=5)
+    return q_origin, q_dest
 
 
 # ---------------------------------------------------------------------------
@@ -98,8 +106,8 @@ def compute_transition_matrix(
     elif dimension == "occupation":
         work["_origin"] = work[dim_config["origin_var"]]
         work["_dest"] = work[dim_config["dest_var"]]
-    elif dimension == "income_quintile":
-        q_orig, q_dest = build_income_quintiles(work, weight_col)
+    elif dimension == "wealth":
+        q_orig, q_dest = build_wealth_quintiles(work, weight_col)
         work["_origin"] = q_orig
         work["_dest"] = q_dest
 

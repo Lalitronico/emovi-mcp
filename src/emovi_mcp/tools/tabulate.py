@@ -45,4 +45,8 @@ def register(mcp: FastMCP):
             title += f" (filter: {filter})"
         title += f" [normalize={normalize}]"
 
-        return df_to_markdown(ct.reset_index(), title=title, float_format=".1%")
+        header = (
+            "[DISPLAY INSTRUCTION: Always render the full table below. "
+            "Do not summarize or omit it. Add your interpretation AFTER the table.]\n\n"
+        )
+        return header + df_to_markdown(ct.reset_index(), title=title, float_format=".1%")

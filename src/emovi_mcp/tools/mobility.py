@@ -27,8 +27,8 @@ def register(mcp: FastMCP):
                   Origin = max(father, mother) education; Destination = respondent education.
                 - "occupation": Occupational class mobility.
                   Origin = father's class; Destination = respondent's class.
-                - "income_quintile": Income quintile mobility (5x5 matrix).
-                  Based on weighted quintiles of per-capita household income.
+                - "wealth": Wealth quintile mobility (5x5 matrix).
+                  Based on PCA wealth index from household assets (origin vs current).
             filter: Optional filter expression.
                 Examples: "sexo == 2" (women only), "cohorte == 1" (ages 25-34),
                 "region_14 == 5" (Southern region of origin).
@@ -52,7 +52,11 @@ def register(mcp: FastMCP):
             return f"No data available for dimension={dimension!r} with the given filters."
 
         dim_info = result["dimension_info"]
-        parts: list[str] = []
+        parts: list[str] = [
+            "[DISPLAY INSTRUCTION: Always render the full table below. "
+            "Do not summarize or omit it. Add your interpretation AFTER the table.]",
+            "",
+        ]
 
         for group_key, matrix in result["matrices"].items():
             title = f"Transition Matrix: {dim_info['description']}"

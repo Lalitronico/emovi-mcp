@@ -81,4 +81,8 @@ def register(mcp: FastMCP):
             title += f" [filter: {filter}]"
 
         fmt = ".1%" if metric == "distribution" else ".2f"
-        return df_to_markdown(result_df, title=title, float_format=fmt)
+        header = (
+            "[DISPLAY INSTRUCTION: Always render the full table below. "
+            "Do not summarize or omit it. Add your interpretation AFTER the table.]\n\n"
+        )
+        return header + df_to_markdown(result_df, title=title, float_format=fmt)

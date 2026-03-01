@@ -24,6 +24,50 @@ def mobility_df():
     })
 
 
+@pytest.fixture
+def wealth_mobility_df():
+    """DataFrame with asset variables for wealth dimension testing."""
+    rng = np.random.default_rng(42)
+    n = 100
+    # Simulate binary survey responses (1=Yes, 2=No) for assets
+    data = {
+        "factor": rng.uniform(100, 5000, n),
+        "cohorte": rng.choice([1, 2], n),
+        "sexo": rng.choice([1, 2], n),
+    }
+    # Origin assets (household goods at age 14)
+    for var in ["p31a", "p31b", "p31c", "p31d", "p31e", "p31f", "p31g",
+                "p31h", "p31i", "p31j", "p31k", "p31l", "p31m", "p31n", "p31o"]:
+        data[var] = rng.choice([1, 2], n)
+    # Origin property
+    for var in ["p32a", "p32b", "p32c", "p32d", "p32e"]:
+        data[var] = rng.choice([1, 2], n)
+    # Origin services
+    for var in ["p26a", "p26b", "p26d", "p26e"]:
+        data[var] = rng.choice([1, 2], n)
+    # Origin automobiles and overcrowding
+    data["p30"] = rng.choice([0, 1, 2], n)
+    data["p22"] = rng.integers(1, 10, n).astype(float)
+    data["p24"] = rng.integers(1, 5, n).astype(float)
+    # Current assets (household goods)
+    for var in ["p96a", "p96b", "p96c", "p96d", "p96e", "p96f", "p96g", "p96h",
+                "p96i", "p96j", "p96k", "p96l", "p96m", "p96n", "p96o", "p96p",
+                "p96q", "p96r"]:
+        data[var] = rng.choice([1, 2], n)
+    # Current property
+    for var in ["p97a", "p97b", "p97c", "p97d", "p97e", "p97f"]:
+        data[var] = rng.choice([1, 2], n)
+    # Current services
+    for var in ["p95a", "p95b", "p95d", "p95e"]:
+        data[var] = rng.choice([1, 2], n)
+    # Current automobiles and overcrowding
+    data["p99"] = rng.choice([0, 1, 2, 3], n)
+    data["tamhog"] = rng.integers(1, 10, n).astype(float)
+    data["p89"] = rng.integers(1, 5, n).astype(float)
+
+    return pd.DataFrame(data)
+
+
 class TestTransitionMatrix:
     def test_education_dimension(self, mobility_df):
         result = compute_transition_matrix(
@@ -53,11 +97,14 @@ class TestTransitionMatrix:
         with pytest.raises(ValueError, match="Unknown dimension"):
             compute_transition_matrix(mobility_df, dimension="invalid")
 
-    def test_income_quintile(self, mobility_df):
+    def test_wealth_dimension(self, wealth_mobility_df):
         result = compute_transition_matrix(
-            mobility_df, dimension="income_quintile"
+            wealth_mobility_df, dimension="wealth"
         )
         assert "all" in result["matrices"]
+        matrix = result["matrices"]["all"]
+        for _, row in matrix.iterrows():
+            assert row.sum() == pytest.approx(1.0, abs=0.01)
 
     def test_summary_stats(self, mobility_df):
         result = compute_transition_matrix(
