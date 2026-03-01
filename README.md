@@ -5,80 +5,78 @@
 [![Python](https://img.shields.io/pypi/pyversions/emovi-mcp)](https://pypi.org/project/emovi-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-MCP server for the ESRU-EMOVI 2023 social mobility survey (Mexico).
-
 Servidor MCP para la encuesta ESRU-EMOVI 2023 de movilidad social en México.
+
+*MCP server for the ESRU-EMOVI 2023 social mobility survey (Mexico).*
 
 ---
 
-## What is this? / ¿Qué es esto?
-
-**emovi-mcp** lets AI assistants (Claude, ChatGPT, etc.) query Mexico's most comprehensive social mobility survey through natural language. It exposes weighted statistical computations, intergenerational transition matrices, and variable exploration as MCP tools.
+## ¿Qué es esto?
 
 **emovi-mcp** permite que asistentes de IA (Claude, ChatGPT, etc.) consulten la encuesta de movilidad social más completa de México mediante lenguaje natural. Expone cómputos estadísticos ponderados, matrices de transición intergeneracional y exploración de variables como herramientas MCP.
 
-## About ESRU-EMOVI 2023
+## Sobre la ESRU-EMOVI 2023
 
-The ESRU-EMOVI 2023 survey, conducted by the Centro de Estudios Espinosa Yglesias (CEEY), is a nationally representative survey of social mobility in Mexico. It covers 17,843 respondents aged 25-64, with expansion factors representing ~60 million people.
+La encuesta ESRU-EMOVI 2023, levantada por el Centro de Estudios Espinosa Yglesias (CEEY), es representativa a nivel nacional sobre movilidad social en México. Cubre 17,843 entrevistados de 25 a 64 años, con factores de expansión que representan ~60 millones de personas.
 
-**Datasets included:**
-| Dataset | Description | Rows | Variables |
-|---------|-------------|------|-----------|
-| `entrevistado` | Main respondent data | 17,843 | ~296 |
-| `hogar` | Household roster | 55,477 | ~56 |
-| `ingreso_2017` | Imputed 2017 income (temporal comparison) | 17,665 | ~2 |
-| `inclusion_financiera` | Financial inclusion module | 5,976 | ~109 |
+**Bases de datos incluidas:**
+| Base de datos | Descripción | Registros | Variables |
+|---------------|-------------|-----------|-----------|
+| `entrevistado` | Datos del entrevistado principal | 17,843 | ~296 |
+| `hogar` | Roster del hogar | 55,477 | ~56 |
+| `ingreso_2017` | Ingreso imputado 2017 (comparación temporal) | 17,665 | ~2 |
+| `inclusion_financiera` | Módulo de inclusión financiera | 5,976 | ~109 |
 
-## Installation / Instalación
+## Instalación
 
 ```bash
-# Clone the repository
+# Clonar el repositorio
 git clone https://github.com/Lalitronico/emovi-mcp.git
 cd emovi-mcp
 
-# Create virtual environment
+# Crear entorno virtual
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 .venv\Scripts\activate     # Windows
 
-# Install in editable mode with dev dependencies
+# Instalar en modo editable con dependencias de desarrollo
 pip install -e ".[dev]"
 
-# Optional: visualization support
+# Opcional: soporte de visualización
 pip install -e ".[dev,viz]"
 ```
 
-Or install directly from PyPI:
+O instalar directamente desde PyPI:
 
 ```bash
 pip install emovi-mcp
-# With visualization support
+# Con soporte de visualización
 pip install emovi-mcp[viz]
 ```
 
-### Prerequisites / Prerrequisitos
+### Prerrequisitos
 
 - Python >= 3.10
-- ESRU-EMOVI 2023 .dta files (obtain from [CEEY](https://ceey.org.mx/emovi/))
+- Archivos .dta de la ESRU-EMOVI 2023 (obtener del [CEEY](https://ceey.org.mx/emovi/))
 
-## Configuration / Configuración
+## Configuración
 
-Set the `EMOVI_DATA_DIR` environment variable to point to the directory containing the .dta files:
+Establecer la variable de entorno `EMOVI_DATA_DIR` apuntando al directorio con los archivos .dta:
 
 ```bash
 # Linux/Mac
-export EMOVI_DATA_DIR="/path/to/Esru Emovi 2023/_extracted/3 BASES DE DATOS/Data"
+export EMOVI_DATA_DIR="/ruta/a/Esru Emovi 2023/_extracted/3 BASES DE DATOS/Data"
 
 # Windows (PowerShell)
-$env:EMOVI_DATA_DIR = "C:\path\to\Esru Emovi 2023\_extracted\3 BASES DE DATOS\Data"
+$env:EMOVI_DATA_DIR = "C:\ruta\a\Esru Emovi 2023\_extracted\3 BASES DE DATOS\Data"
 
 # Windows (cmd)
-set EMOVI_DATA_DIR=C:\path\to\Esru Emovi 2023\_extracted\3 BASES DE DATOS\Data
+set EMOVI_DATA_DIR=C:\ruta\a\Esru Emovi 2023\_extracted\3 BASES DE DATOS\Data
 ```
 
-## Usage with Claude Desktop / Uso con Claude Desktop
+## Uso con Claude Desktop
 
-Add the following to your `claude_desktop_config.json`:
+Agregar lo siguiente al archivo `claude_desktop_config.json`:
 
 **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -87,86 +85,86 @@ Add the following to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "emovi-mcp": {
-      "command": "C:/path/to/emovi-mcp/.venv/Scripts/python.exe",
+      "command": "C:/ruta/a/emovi-mcp/.venv/Scripts/python.exe",
       "args": ["-m", "emovi_mcp"],
       "env": {
-        "EMOVI_DATA_DIR": "C:/path/to/3 BASES DE DATOS/Data"
+        "EMOVI_DATA_DIR": "C:/ruta/a/3 BASES DE DATOS/Data"
       }
     }
   }
 }
 ```
 
-On macOS/Linux, replace `Scripts/python.exe` with `bin/python`.
+En macOS/Linux, reemplazar `Scripts/python.exe` por `bin/python`.
 
-## Tools / Herramientas
+## Herramientas
 
-The server exposes 11 MCP tools:
+El servidor expone 11 herramientas MCP:
 
-| Tool | Description |
-|------|-------------|
-| `describe_survey` | Survey overview: datasets, sample size, design, dimensions |
-| `list_variables` | Browse variables by dataset, section, or search keyword |
-| `variable_detail` | Full info for a variable: label, values, section, dataset |
-| `tabulate` | Weighted crosstabulation (row x col with expansion factors) |
-| `transition_matrix` | Intergenerational mobility matrix with formal indices (Shorrocks, Prais, odds ratios) and optional standard errors via Taylor linearization |
-| `weighted_stats` | Descriptive statistics: mean, median, std, quantiles (weighted) |
-| `compare_groups` | Compare a variable across groups (mean, median, or distribution) |
-| `filter_data` | Extract raw data rows with optional filters (max 100 rows) |
-| `financial_inclusion_summary` | Financial inclusion analysis: savings, credit, banking, literacy, discrimination |
-| `income_comparison` | Temporal income comparison between 2017 and 2023 with poverty line classification |
-| `visualize_mobility` | Generate heatmaps, Sankey diagrams, or bar charts for mobility matrices (requires `[viz]`) |
+| Herramienta | Descripción |
+|-------------|-------------|
+| `describe_survey` | Panorama de la encuesta: bases de datos, tamaño muestral, diseño, dimensiones |
+| `list_variables` | Explorar variables por base, sección o palabra clave |
+| `variable_detail` | Información completa de una variable: etiqueta, valores, sección, base |
+| `tabulate` | Tabulación cruzada ponderada (fila x columna con factores de expansión) |
+| `transition_matrix` | Matriz de movilidad intergeneracional con índices formales (Shorrocks, Prais, razón de momios) y errores estándar opcionales vía linealización de Taylor |
+| `weighted_stats` | Estadísticas descriptivas: media, mediana, desviación estándar, cuantiles (ponderados) |
+| `compare_groups` | Comparar una variable entre grupos (media, mediana o distribución) |
+| `filter_data` | Extraer registros con filtros opcionales (máximo 100 filas) |
+| `financial_inclusion_summary` | Análisis de inclusión financiera: ahorro, crédito, banca, alfabetización, discriminación |
+| `income_comparison` | Comparación temporal de ingreso 2017 vs 2023 con clasificación por línea de pobreza |
+| `visualize_mobility` | Generar heatmaps, diagramas Sankey o gráficas de barras para matrices de movilidad (requiere `[viz]`) |
 
-### Example queries / Ejemplos de consultas
+### Ejemplos de consultas
 
-Once connected, you can ask the AI assistant questions like:
+Una vez conectado, puedes preguntar al asistente de IA cosas como:
 
 - *"¿Cuál es la distribución educativa por sexo?"*
-  → Uses `tabulate(row_var="educ", col_var="sexo")`
+  → Usa `tabulate(row_var="educ", col_var="sexo")`
 
 - *"Muéstrame la matriz de movilidad educativa intergeneracional"*
-  → Uses `transition_matrix(dimension="education")`
+  → Usa `transition_matrix(dimension="education")`
 
 - *"¿Cuál es el ingreso promedio por región?"*
-  → Uses `weighted_stats(variable="ingc_pc", by="region_14")`
+  → Usa `weighted_stats(variable="ingc_pc", by="region_14")`
 
 - *"Compara la movilidad educativa entre hombres y mujeres"*
-  → Uses `transition_matrix(dimension="education", by="sexo")`
+  → Usa `transition_matrix(dimension="education", by="sexo")`
 
 - *"¿Qué variables hay sobre educación?"*
-  → Uses `list_variables(search="educ")`
+  → Usa `list_variables(search="educ")`
 
-## Variable Dictionary / Diccionario de variables
+## Diccionario de variables
 
-The project includes a pre-built dictionary with 792 variables extracted from the official CEEY documentation and .dta metadata. The dictionary supports searching by name, description, dataset, and section.
+El proyecto incluye un diccionario preconstruido con 792 variables extraídas de la documentación oficial del CEEY y los metadatos de los archivos .dta. Soporta búsqueda por nombre, descripción, base de datos y sección.
 
-To rebuild the dictionary from source data:
+Para reconstruir el diccionario desde los datos fuente:
 
 ```bash
 python scripts/build_dictionary.py
 ```
 
-This requires the `Diccionario ESRU EMOVI 2023.xlsx` file in the data directory.
+Esto requiere el archivo `Diccionario ESRU EMOVI 2023.xlsx` en el directorio de datos.
 
-## Running Tests / Ejecutar pruebas
+## Ejecutar pruebas
 
 ```bash
 pytest
 ```
 
-All 96 tests cover weighted statistics, transition matrices, mobility indices, Taylor-linearized standard errors, financial inclusion, temporal income comparison, visualization, and variable dictionary functionality using synthetic data (no real microdata needed for tests).
+Las 96 pruebas cubren estadísticas ponderadas, matrices de transición, índices de movilidad, errores estándar por linealización de Taylor, inclusión financiera, comparación temporal de ingreso, visualización y funcionalidad del diccionario de variables, todo con datos sintéticos (no se requieren microdatos reales).
 
-## Technical Notes / Notas técnicas
+## Notas técnicas
 
-- **All statistics are weighted** using the `factor` expansion variable (or `fac_inc` for the financial inclusion module)
-- **pyreadstat loads .dta files with `apply_value_formats=False`** to avoid crashes from duplicate municipality labels
-- **`padres_edu`** is constructed as `max(educp, educm)` following the CEEY .do file methodology
-- **Wealth index** uses PCA on binary asset indicators (Filmer & Pritchett, 2001), as an alternative to CEEY's MCA approach
-- **Standard errors** use Taylor linearization for ratio estimators under stratified cluster sampling (PSU/strata)
-- **Mobility indices**: Shorrocks M, Prais escape probability, intergenerational Pearson r, corner odds ratios
-- **STDIO transport**: The server communicates via standard input/output, compatible with Claude Desktop and other MCP clients
+- **Todas las estadísticas son ponderadas** usando la variable de expansión `factor` (o `fac_inc` para el módulo de inclusión financiera)
+- **pyreadstat carga los .dta con `apply_value_formats=False`** para evitar crashes por etiquetas duplicadas de municipios
+- **`padres_edu`** se construye como `max(educp, educm)` siguiendo la metodología del .do del CEEY
+- **Índice de riqueza** usa PCA sobre indicadores binarios de activos del hogar (Filmer & Pritchett, 2001), como alternativa al enfoque MCA del CEEY
+- **Errores estándar** usan linealización de Taylor para estimadores de razón bajo muestreo estratificado por conglomerados (UPM/estrato)
+- **Índices de movilidad**: Shorrocks M, probabilidad de escape de Prais, correlación intergeneracional de Pearson r, razón de momios de esquina
+- **Transporte STDIO**: El servidor se comunica por entrada/salida estándar, compatible con Claude Desktop y otros clientes MCP
 
-## Project Structure / Estructura del proyecto
+## Estructura del proyecto
 
 ```
 emovi-mcp/
@@ -175,30 +173,30 @@ emovi-mcp/
 ├── LICENSE
 ├── CONTRIBUTING.md
 ├── .github/workflows/
-│   ├── ci.yml                    # CI: pytest on Python 3.10/3.11/3.12
-│   └── publish.yml               # Publish to PyPI on release
+│   ├── ci.yml                    # CI: pytest en Python 3.10/3.11/3.12
+│   └── publish.yml               # Publicar en PyPI al crear release
 ├── scripts/
-│   └── build_dictionary.py       # One-time dictionary builder
+│   └── build_dictionary.py       # Constructor del diccionario
 ├── src/emovi_mcp/
 │   ├── __init__.py
 │   ├── __main__.py               # python -m emovi_mcp
-│   ├── main.py                   # FastMCP server entry point
-│   ├── config.py                 # Environment, mappings, constants
-│   ├── data_loader.py            # Lazy .dta loader with cache
-│   ├── dictionary.py             # Variable dictionary (JSON-based)
-│   ├── stats_engine.py           # Transition matrices, descriptives
+│   ├── main.py                   # Punto de entrada del servidor FastMCP
+│   ├── config.py                 # Entorno, mapeos, constantes
+│   ├── data_loader.py            # Cargador lazy de .dta con caché
+│   ├── dictionary.py             # Diccionario de variables (JSON)
+│   ├── stats_engine.py           # Matrices de transición, descriptivas
 │   ├── data/
 │   │   └── dictionary.json       # 792 variables
 │   ├── helpers/
-│   │   ├── formatting.py         # Markdown formatters for LLM output
-│   │   ├── labels.py             # Value label resolution
-│   │   ├── mobility_indices.py   # Shorrocks, Prais, odds ratios
-│   │   ├── survey_variance.py    # Taylor linearization for SE/CI
-│   │   ├── validation.py         # Column + filter validation
-│   │   ├── visualization.py      # Heatmaps, Sankey, bar charts
-│   │   └── weights.py            # Weighted mean, median, quantile, freq
+│   │   ├── formatting.py         # Formateadores Markdown para salida LLM
+│   │   ├── labels.py             # Resolución de etiquetas de valor
+│   │   ├── mobility_indices.py   # Shorrocks, Prais, razón de momios
+│   │   ├── survey_variance.py    # Linealización de Taylor para SE/CI
+│   │   ├── validation.py         # Validación de columnas y filtros
+│   │   ├── visualization.py      # Heatmaps, Sankey, gráficas de barras
+│   │   └── weights.py            # Media, mediana, cuantil, frecuencia ponderados
 │   └── tools/
-│       ├── __init__.py            # Tool registration (11 tools)
+│       ├── __init__.py            # Registro de herramientas (11 tools)
 │       ├── compare.py             # compare_groups
 │       ├── describe.py            # describe_survey
 │       ├── financial.py           # financial_inclusion_summary
@@ -210,7 +208,7 @@ emovi-mcp/
 │       ├── variables.py           # list_variables, variable_detail
 │       └── visualize.py           # visualize_mobility
 └── tests/
-    ├── conftest.py                # Shared fixtures (synthetic data)
+    ├── conftest.py                # Fixtures compartidos (datos sintéticos)
     ├── test_dictionary.py
     ├── test_financial.py
     ├── test_mobility.py
@@ -222,10 +220,10 @@ emovi-mcp/
     └── test_wealth_index.py
 ```
 
-## License / Licencia
+## Licencia
 
 MIT
 
-## Acknowledgments / Agradecimientos
+## Agradecimientos
 
-Survey data: [Centro de Estudios Espinosa Yglesias (CEEY)](https://ceey.org.mx/) — ESRU-EMOVI 2023.
+Datos de la encuesta: [Centro de Estudios Espinosa Yglesias (CEEY)](https://ceey.org.mx/) — ESRU-EMOVI 2023.
