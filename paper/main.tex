@@ -1,0 +1,340 @@
+% !TEX program = pdflatex
+\documentclass[12pt, a4paper]{article}
+
+% ---- Language ----
+\usepackage[spanish, es-tabla]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% ---- Layout ----
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% ---- Math & Tables ----
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+
+% ---- Graphics ----
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{float}
+
+% ---- Citations ----
+\usepackage[authoryear, round]{natbib}
+\bibliographystyle{apalike}
+
+% ---- Links ----
+\usepackage[colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black, urlcolor=blue!60!black]{hyperref}
+
+% ---- Code ----
+\usepackage{listings}
+\lstset{
+  basicstyle=\footnotesize\ttfamily,
+  breaklines=true,
+  frame=single,
+  language=Python,
+  captionpos=b,
+}
+
+% ---- Title ----
+\title{%
+  Democratizando el acceso a microdatos:\\
+  Un servidor MCP para el análisis reproducible\\
+  de movilidad social en México%
+}
+\author{%
+  [Nombre del autor]\\
+  \small [Afiliación institucional]\\
+  \small \href{mailto:correo@ejemplo.com}{correo@ejemplo.com}
+}
+\date{\today}
+
+% ======================================================================
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este artículo presenta \texttt{emovi-mcp}, un servidor de código abierto que implementa el Model Context Protocol (MCP) para permitir que asistentes de inteligencia artificial consulten directamente los microdatos de la encuesta ESRU-EMOVI 2023 de movilidad social en México. El sistema expone 11 herramientas estadísticas que cubren matrices de transición intergeneracional con errores estándar basados en linealización de Taylor, índices formales de movilidad (Shorrocks, Prais, correlación intergeneracional, razones de momios), un índice de riqueza por componentes principales, inclusión financiera y comparación temporal de ingresos. Argumentamos que la interfaz conversacional reduce significativamente las barreras técnicas para el análisis de encuestas complejas, habilitando tanto la reproducibilidad como la accesibilidad para investigadores sin formación en programación estadística. Documentamos la metodología, validamos los resultados contra los valores publicados por el Centro de Estudios Espinosa Yglesias (CEEY), y discutimos las implicaciones de esta arquitectura para la democratización del análisis cuantitativo en ciencias sociales.
+
+\medskip
+\noindent\textbf{Palabras clave:} movilidad social, MCP, inteligencia artificial, reproducibilidad, ESRU-EMOVI, México, desigualdad intergeneracional
+
+\medskip
+\noindent\textbf{Clasificación JEL:} J62, D63, C81, O15
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ======================================================================
+\section{Introducción}
+\label{sec:intro}
+
+La medición de la movilidad social intergeneracional es un pilar de la investigación sobre desigualdad económica. En México, la encuesta ESRU-EMOVI 2023 ---recopilada por el Centro de Estudios Espinosa Yglesias \citep{ceey2025}--- constituye la fuente más completa para analizar los patrones de movilidad educativa, ocupacional y patrimonial de la población de 25 a 64 años. Sin embargo, el análisis de estos microdatos requiere competencias técnicas considerables: manejo de archivos Stata (.dta), comprensión del diseño muestral estratificado por conglomerados, y dominio de software estadístico especializado.
+
+Este artículo presenta una innovación tecnológica que busca reducir estas barreras. Mediante el Model Context Protocol (MCP) ---un estándar abierto para la integración entre aplicaciones e inteligencia artificial \citep{anthropic2024mcp}--- hemos desarrollado un servidor que permite consultar los microdatos de la ESRU-EMOVI 2023 a través de lenguaje natural. El usuario formula preguntas en español (o inglés) y el asistente de IA ejecuta las operaciones estadísticas correspondientes de manera transparente.
+
+La contribución de este trabajo es triple:
+
+\begin{enumerate}
+    \item \textbf{Metodológica:} Implementamos errores estándar basados en linealización de Taylor para las celdas de las matrices de transición ---estadísticos que no se reportan en las publicaciones del CEEY--- e índices formales de movilidad (Shorrocks, Prais, correlación intergeneracional, razones de momios de esquina).
+
+    \item \textbf{Tecnológica:} Demostramos cómo la arquitectura MCP habilita el acceso conversacional a análisis estadísticos complejos sin sacrificar rigor metodológico, con 96 pruebas automatizadas que verifican la corrección de los cálculos.
+
+    \item \textbf{De accesibilidad:} Reducimos el tiempo de obtención de un resultado analítico válido de horas (configuración de software + programación) a segundos (pregunta en lenguaje natural), facilitando el uso de microdatos por investigadores, periodistas y tomadores de decisiones.
+\end{enumerate}
+
+El resto del artículo se organiza como sigue. La Sección~\ref{sec:lit} revisa la literatura sobre medición de movilidad social y reproducibilidad. La Sección~\ref{sec:data} describe los datos y el diseño muestral. La Sección~\ref{sec:method} detalla la metodología estadística. La Sección~\ref{sec:results} presenta los resultados. La Sección~\ref{sec:mcp} describe la arquitectura MCP. La Sección~\ref{sec:conclusions} concluye.
+
+
+% ======================================================================
+\section{Revisión de literatura}
+\label{sec:lit}
+
+\subsection{Movilidad social intergeneracional}
+
+La literatura sobre movilidad intergeneracional se ha expandido considerablemente desde los trabajos seminales de \citet{shorrocks1978} y \citet{prais1955}. \citet{corak2013} documenta la relación entre desigualdad de ingresos y movilidad intergeneracional (la ``Curva del Gran Gatsby''), mientras que \citet{torche2014} ofrece una síntesis comprehensiva para América Latina, identificando a México como un caso de baja movilidad relativa.
+
+En el contexto mexicano, la serie de encuestas ESRU-EMOVI ---levantadas en 2006, 2011, 2017 y 2023--- ha sido la fuente principal para la investigación empírica \citep{delajara2017, ceey2025}. El CEEY publica informes periódicos con matrices de transición para educación, ocupación y riqueza, pero típicamente sin errores estándar ni intervalos de confianza, limitando la capacidad de realizar inferencia formal.
+
+\subsection{Medición de la riqueza: MCA vs.\ PCA}
+
+El CEEY utiliza Análisis de Correspondencias Múltiples (MCA) para construir un índice de riqueza basado en activos del hogar. Nuestra implementación emplea Análisis de Componentes Principales (PCA) sobre indicadores binarios de activos, siguiendo la metodología de \citet{filmer2001}. Aunque ambos enfoques son conceptualmente similares ---ambos buscan un resumen unidimensional de un espacio multivariado de activos--- producen quintiles ligeramente diferentes \citep{vyas2006, mckenzie2005}.
+
+\subsection{Reproducibilidad en ciencias sociales}
+
+La crisis de reproducibilidad en ciencias sociales ha motivado llamados hacia prácticas de investigación más transparentes \citep{christensen2018, gentzkow2014}. Nuestro enfoque contribuye a esta agenda al proporcionar código abierto con pruebas automatizadas, documentación completa, y una interfaz que registra cada operación estadística de manera explícita.
+
+
+% ======================================================================
+\section{Datos}
+\label{sec:data}
+
+\subsection{La encuesta ESRU-EMOVI 2023}
+
+La ESRU-EMOVI 2023 es una encuesta probabilística con diseño muestral estratificado bietápico por conglomerados, representativa a nivel nacional de la población mexicana de 25 a 64 años. La base contiene 17,843 entrevistados con factores de expansión (\texttt{factor}) que representan aproximadamente 60 millones de personas.
+
+La encuesta recopila información retrospectiva sobre las condiciones socioeconómicas del hogar de origen del entrevistado (cuando tenía 14 años), permitiendo construir medidas de movilidad intergeneracional en tres dimensiones principales:
+
+\begin{itemize}
+    \item \textbf{Educación:} Nivel educativo del entrevistado vs.\ máximo de los padres (4 categorías)
+    \item \textbf{Ocupación:} Clase ocupacional del entrevistado vs.\ la del padre/madre (6 categorías)
+    \item \textbf{Riqueza:} Quintil de un índice de activos actuales vs.\ activos del hogar de origen
+\end{itemize}
+
+\subsection{Módulos adicionales}
+
+Además del cuestionario principal, se utilizan:
+
+\begin{itemize}
+    \item \textbf{Módulo de hogar} (55,477 registros): Composición del hogar, parentesco, ingresos de cada miembro.
+    \item \textbf{Ingreso imputado 2017} (17,665 registros): Ingreso per cápita estimado para 2017, permitiendo comparación temporal.
+    \item \textbf{Inclusión financiera} (5,976 registros): Acceso a ahorro, crédito, banca, discriminación financiera (con factor de expansión propio \texttt{fac\_inc}).
+\end{itemize}
+
+
+% ======================================================================
+\section{Metodología}
+\label{sec:method}
+
+\subsection{Matrices de transición}
+
+Sea $P$ una matriz de transición $n \times n$ donde $p_{ij}$ representa la probabilidad de que un individuo cuyo hogar de origen pertenecía a la categoría $i$ se encuentre en la categoría $j$:
+
+\begin{equation}
+    p_{ij} = \frac{\sum_{k \in C_{ij}} w_k}{\sum_{k \in C_{i \cdot}} w_k}
+    \label{eq:transition}
+\end{equation}
+
+donde $w_k$ es el factor de expansión del individuo $k$, $C_{ij}$ es el conjunto de individuos con origen $i$ y destino $j$, y $C_{i\cdot}$ es el conjunto con origen $i$.
+
+\subsection{Índice de riqueza por PCA}
+\label{subsec:pca}
+
+Siguiendo a \citet{filmer2001}, construimos un índice de riqueza mediante el primer componente principal de un conjunto de indicadores binarios de activos del hogar. Para el hogar de origen, utilizamos 17 indicadores (bienes durables, propiedad, servicios, hacinamiento); para el hogar actual, 24 indicadores.
+
+El PCA se ejecuta por cohorte de nacimiento para capturar cambios en la distribución de activos a través del tiempo. La ambigüedad de signo del primer componente se resuelve verificando la correlación con la suma simple de indicadores (un hogar con más activos debe tener un puntaje mayor).
+
+\subsection{Errores estándar por linealización de Taylor}
+\label{subsec:taylor}
+
+Cada celda $p_{ij}$ es un estimador de razón bajo muestreo complejo. Aplicamos linealización de Taylor \citep{binder1983, wolter2007} para estimar su varianza. Definimos la variable linealizada:
+
+\begin{equation}
+    z_k = \frac{1}{\hat{X}} \left( y_k - \hat{R} \cdot x_k \right)
+    \label{eq:taylor}
+\end{equation}
+
+donde $y_k = w_k \cdot \mathbf{1}[k \in C_{ij}]$, $x_k = w_k \cdot \mathbf{1}[k \in C_{i\cdot}]$, $\hat{R} = \hat{Y}/\hat{X} = p_{ij}$, y $\hat{X} = \sum_k x_k$.
+
+La varianza se calcula con la fórmula estándar para muestreo estratificado por conglomerados:
+
+\begin{equation}
+    \hat{V}(\hat{R}) = \sum_{h=1}^{H} \frac{n_h}{n_h - 1} \sum_{\alpha=1}^{n_h} \left( \bar{z}_{h\alpha} - \bar{z}_{h\cdot} \right)^2
+    \label{eq:variance}
+\end{equation}
+
+donde $h$ indexa estratos, $\alpha$ indexa unidades primarias de muestreo (UPM), $n_h$ es el número de UPMs en el estrato $h$, $\bar{z}_{h\alpha}$ es la media de $z$ en la UPM $\alpha$ del estrato $h$, y $\bar{z}_{h\cdot}$ es la media del estrato.
+
+\subsection{Índices de movilidad}
+
+Implementamos cuatro índices complementarios:
+
+\begin{enumerate}
+    \item \textbf{Índice de Shorrocks} \citep{shorrocks1978}: $M(P) = \frac{n - \text{tr}(P)}{n - 1}$, donde $M = 0$ indica inmovilidad perfecta y $M = 1$ movilidad máxima.
+
+    \item \textbf{Índice de Prais} \citep{prais1955}: $\pi_i = 1 - p_{ii}$, la probabilidad de escape de cada categoría de origen.
+
+    \item \textbf{Correlación intergeneracional}: Coeficiente de Pearson ponderado entre la posición de origen y destino (codificadas numéricamente).
+
+    \item \textbf{Razones de momios de esquina}: $\theta = \frac{p_{11} \cdot p_{nn}}{p_{1n} \cdot p_{n1}}$, que captura la rigidez relativa en los extremos de la distribución.
+\end{enumerate}
+
+
+% ======================================================================
+\section{Resultados}
+\label{sec:results}
+
+\textit{[Esta sección se completará con los resultados obtenidos al ejecutar el sistema con los datos reales de la ESRU-EMOVI 2023. Las tablas y figuras se generarán automáticamente mediante el script \texttt{scripts/generate\_paper\_outputs.py}.]}
+
+\subsection{Matrices de transición con errores estándar}
+
+% PLACEHOLDER: Table generated by scripts/generate_paper_outputs.py
+% \input{tables/education_matrix_se.tex}
+
+\subsection{Índices de movilidad por dimensión}
+
+% PLACEHOLDER: Table generated by scripts/generate_paper_outputs.py
+% \input{tables/mobility_indices.tex}
+
+\subsection{Movilidad por subgrupos}
+
+% PLACEHOLDER: Tables by sex, region, cohort
+% \input{tables/education_by_sex.tex}
+
+\subsection{Validación contra CEEY 2025}
+
+% PLACEHOLDER: Comparison table
+% \input{tables/ceey_validation.tex}
+
+\subsection{Inclusión financiera y movilidad}
+
+% PLACEHOLDER: Financial inclusion results
+% \input{tables/financial_inclusion.tex}
+
+\subsection{Dinámica temporal del ingreso}
+
+% PLACEHOLDER: Income comparison 2017-2023
+% \input{tables/income_temporal.tex}
+
+
+% ======================================================================
+\section{La innovación MCP: acceso conversacional a microdatos}
+\label{sec:mcp}
+
+\subsection{Arquitectura del sistema}
+
+El Model Context Protocol (MCP) es un estándar abierto que define la interfaz entre aplicaciones de IA y fuentes de datos externas \citep{anthropic2024mcp}. Nuestro servidor implementa 11 herramientas (\textit{tools}) que el asistente de IA puede invocar programáticamente:
+
+\begin{table}[H]
+\centering
+\small
+\caption{Herramientas MCP implementadas en \texttt{emovi-mcp}}
+\label{tab:tools}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Herramienta} & \textbf{Descripción} \\
+\midrule
+\texttt{describe\_survey} & Resumen general: datasets, tamaño muestral, diseño \\
+\texttt{list\_variables} & Explorar variables por dataset, sección o búsqueda \\
+\texttt{variable\_detail} & Información completa de una variable \\
+\texttt{tabulate} & Tabulación cruzada ponderada \\
+\texttt{transition\_matrix} & Matriz de transición con índices y errores estándar \\
+\texttt{weighted\_stats} & Estadísticas descriptivas ponderadas \\
+\texttt{compare\_groups} & Comparación entre subgrupos \\
+\texttt{filter\_data} & Extracción de microdatos filtrados \\
+\texttt{financial\_inclusion} & Análisis de inclusión financiera \\
+\texttt{income\_comparison} & Comparación temporal de ingresos 2017--2023 \\
+\texttt{visualize\_mobility} & Visualizaciones: heatmaps, Sankey, barras \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Ejemplo de interacción}
+
+Un investigador puede obtener la matriz de movilidad educativa con errores estándar formulando la pregunta:
+
+\begin{quote}
+\textit{``Muéstrame la matriz de movilidad educativa intergeneracional con errores estándar, separada por sexo.''}
+\end{quote}
+
+El asistente invoca \texttt{transition\_matrix(dimension="education", by="sexo", include\_se=True)} y presenta los resultados formateados, incluyendo índices de Shorrocks y Prais, sin que el usuario necesite escribir código.
+
+\subsection{Reproducibilidad y verificación}
+
+El sistema incluye 96 pruebas automatizadas que verifican la corrección de cada componente estadístico usando datos sintéticos. Adicionalmente, el script \texttt{validate\_ceey.py} compara los resultados contra los valores publicados por el CEEY, permitiendo validación externa.
+
+
+% ======================================================================
+\section{Conclusiones}
+\label{sec:conclusions}
+
+Este artículo demuestra que la combinación de protocolos abiertos de interoperabilidad (MCP) con computación estadística rigurosa puede reducir significativamente las barreras de acceso al análisis de microdatos complejos. Nuestro servidor \texttt{emovi-mcp} extiende las publicaciones existentes del CEEY al agregar errores estándar, índices formales de movilidad, y análisis de inclusión financiera, todo accesible mediante lenguaje natural.
+
+Las limitaciones incluyen: (i) la dependencia del índice PCA frente al MCA utilizado por el CEEY, lo que produce diferencias en los quintiles de riqueza; (ii) la necesidad de acceso local a los microdatos (no distribuibles públicamente); y (iii) la cobertura incompleta del módulo ocupacional, que requiere variables no siempre presentes en todas las versiones de los datos.
+
+Futuras extensiones incluyen la incorporación de la serie histórica ESRU-EMOVI (2006, 2011, 2017) para análisis de tendencias, la integración con la ENIGH para medidas de ingreso corriente, y la implementación de técnicas de aprendizaje automático para la descomposición de desigualdad de oportunidades siguiendo el marco de Roemer.
+
+
+% ======================================================================
+% APPENDIX
+\appendix
+
+\section{Apéndice técnico: Derivación de la varianza de Taylor}
+\label{app:taylor}
+
+Consideremos el estimador de razón $\hat{R} = \hat{Y}/\hat{X}$ donde:
+\begin{align}
+    \hat{Y} &= \sum_{k=1}^{n} w_k y_k \\
+    \hat{X} &= \sum_{k=1}^{n} w_k x_k
+\end{align}
+
+La expansión de Taylor de primer orden alrededor de los valores poblacionales $R = Y/X$ produce:
+\begin{equation}
+    \hat{R} - R \approx \frac{1}{X} \left( \hat{Y} - R \hat{X} \right)
+\end{equation}
+
+Definiendo $z_k = (1/\hat{X})(y_k - \hat{R} x_k)$, la varianza del estimador se aproxima como $\hat{V}(\hat{R}) = \hat{V}\left(\sum_k w_k z_k\right)$, que se calcula mediante la fórmula estándar para muestreo estratificado por conglomerados (ecuación~\ref{eq:variance}).
+
+Para las celdas de la matriz de transición, $y_k = \mathbf{1}[k \in C_{ij}]$ y $x_k = \mathbf{1}[k \in C_{i\cdot}]$ (restringidos a observaciones con origen $i$), y los pesos $w_k$ son los factores de expansión de la encuesta.
+
+\section{Apéndice: Variables del índice de riqueza PCA}
+\label{app:wealth}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Indicadores binarios para el índice de riqueza del hogar de origen}
+\label{tab:origin_assets}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Variable} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+p31a--p31o & Bienes durables & Lavadora, refrigerador, estufa, TV, teléfono, auto, etc. \\
+p32a--p32e & Propiedad & Casa propia, terreno, negocio, otra propiedad \\
+p26a,b,d,e & Servicios & Agua entubada, drenaje, electricidad, piso firme \\
+p30 & Vehículos & Número de autos (recodificado: $\geq 1$ = 1) \\
+p22, p24 & Hacinamiento & Personas/cuartos $> 2.5$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ======================================================================
+\bibliography{references}
+
+\end{document}

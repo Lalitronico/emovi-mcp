@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from emovi_mcp.config import WEIGHT_COL
+from emovi_mcp.config import get_weight_col
 from emovi_mcp.data_loader import get_dataframe
 from emovi_mcp.helpers.formatting import stats_summary_markdown
 from emovi_mcp.stats_engine import compute_descriptive_stats
@@ -33,7 +33,7 @@ def register(mcp: FastMCP):
         results = compute_descriptive_stats(
             df,
             variable=variable,
-            weight_col=WEIGHT_COL,
+            weight_col=get_weight_col(dataset),
             filter_expr=filter,
             by=by,
         )

@@ -77,6 +77,36 @@ def matrix_to_markdown(
     return "\n".join(lines)
 
 
+def matrix_with_se_to_markdown(
+    matrix: pd.DataFrame,
+    se_matrix: pd.DataFrame,
+    title: str = "Matrix with Standard Errors",
+) -> str:
+    """Format transition matrix as 'value (SE)' with 95% CI in footnote."""
+    lines: list[str] = [f"## {title}", ""]
+
+    col_labels = [str(c) for c in matrix.columns]
+    lines.append(f"| Origen \\\\ Destino | {' | '.join(col_labels)} |")
+    lines.append(f"| --- | {' | '.join(['---'] * len(col_labels))} |")
+
+    for idx in matrix.index:
+        cells = []
+        for col in matrix.columns:
+            val = matrix.loc[idx, col]
+            se = se_matrix.loc[idx, col] if idx in se_matrix.index and col in se_matrix.columns else 0
+            if pd.notna(val):
+                lo = max(0, val - 1.96 * se)
+                hi = min(1, val + 1.96 * se)
+                cells.append(f"{val:.1%} ({se:.3f})")
+            else:
+                cells.append("")
+        lines.append(f"| {idx} | {' | '.join(cells)} |")
+
+    lines.append("")
+    lines.append("*SE via Taylor linearization. 95% CI = estimate ± 1.96×SE.*")
+    return "\n".join(lines)
+
+
 def stats_summary_markdown(stats: dict, title: str = "Summary") -> str:
     """Format a dict of statistics as markdown."""
     lines = [f"## {title}", ""]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from emovi_mcp.config import WEIGHT_COL
+from emovi_mcp.config import get_weight_col
 from emovi_mcp.data_loader import get_dataframe
 from emovi_mcp.helpers.formatting import df_to_markdown
 from emovi_mcp.stats_engine import compute_crosstab
@@ -35,7 +35,7 @@ def register(mcp: FastMCP):
             df,
             row_var=row_var,
             col_var=col_var,
-            weight_col=WEIGHT_COL,
+            weight_col=get_weight_col(dataset),
             normalize=normalize,
             filter_expr=filter,
         )

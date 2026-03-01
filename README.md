@@ -1,5 +1,10 @@
 # emovi-mcp
 
+[![CI](https://github.com/your-user/emovi-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/your-user/emovi-mcp/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/emovi-mcp)](https://pypi.org/project/emovi-mcp/)
+[![Python](https://img.shields.io/pypi/pyversions/emovi-mcp)](https://pypi.org/project/emovi-mcp/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 MCP server for the ESRU-EMOVI 2023 social mobility survey (Mexico).
 
 Servidor MCP para la encuesta ESRU-EMOVI 2023 de movilidad social en México.
@@ -38,6 +43,17 @@ source .venv/bin/activate  # Linux/Mac
 
 # Install in editable mode with dev dependencies
 pip install -e ".[dev]"
+
+# Optional: visualization support
+pip install -e ".[dev,viz]"
+```
+
+Or install directly from PyPI:
+
+```bash
+pip install emovi-mcp
+# With visualization support
+pip install emovi-mcp[viz]
 ```
 
 ### Prerequisites / Prerrequisitos
@@ -85,18 +101,21 @@ On macOS/Linux, replace `Scripts/python.exe` with `bin/python`.
 
 ## Tools / Herramientas
 
-The server exposes 8 MCP tools:
+The server exposes 11 MCP tools:
 
 | Tool | Description |
 |------|-------------|
 | `describe_survey` | Survey overview: datasets, sample size, design, dimensions |
 | `list_variables` | Browse variables by dataset, section, or search keyword |
 | `variable_detail` | Full info for a variable: label, values, section, dataset |
-| `tabulate` | Weighted crosstabulation (row × col with expansion factors) |
-| `transition_matrix` | Intergenerational mobility matrix (education, occupation, income) |
+| `tabulate` | Weighted crosstabulation (row x col with expansion factors) |
+| `transition_matrix` | Intergenerational mobility matrix with formal indices (Shorrocks, Prais, odds ratios) and optional standard errors via Taylor linearization |
 | `weighted_stats` | Descriptive statistics: mean, median, std, quantiles (weighted) |
 | `compare_groups` | Compare a variable across groups (mean, median, or distribution) |
 | `filter_data` | Extract raw data rows with optional filters (max 100 rows) |
+| `financial_inclusion_summary` | Financial inclusion analysis: savings, credit, banking, literacy, discrimination |
+| `income_comparison` | Temporal income comparison between 2017 and 2023 with poverty line classification |
+| `visualize_mobility` | Generate heatmaps, Sankey diagrams, or bar charts for mobility matrices (requires `[viz]`) |
 
 ### Example queries / Ejemplos de consultas
 
@@ -135,14 +154,16 @@ This requires the `Diccionario ESRU EMOVI 2023.xlsx` file in the data directory.
 pytest
 ```
 
-All 23 tests cover weighted statistics, transition matrix computation, and variable dictionary functionality using synthetic data (no real microdata needed for tests).
+All 96 tests cover weighted statistics, transition matrices, mobility indices, Taylor-linearized standard errors, financial inclusion, temporal income comparison, visualization, and variable dictionary functionality using synthetic data (no real microdata needed for tests).
 
 ## Technical Notes / Notas técnicas
 
-- **All statistics are weighted** using the `factor` expansion variable from the survey design
+- **All statistics are weighted** using the `factor` expansion variable (or `fac_inc` for the financial inclusion module)
 - **pyreadstat loads .dta files with `apply_value_formats=False`** to avoid crashes from duplicate municipality labels
 - **`padres_edu`** is constructed as `max(educp, educm)` following the CEEY .do file methodology
-- **Income quintiles** are computed using weighted quantile allocation (replicating Stata's `xtile [pw=factor]`)
+- **Wealth index** uses PCA on binary asset indicators (Filmer & Pritchett, 2001), as an alternative to CEEY's MCA approach
+- **Standard errors** use Taylor linearization for ratio estimators under stratified cluster sampling (PSU/strata)
+- **Mobility indices**: Shorrocks M, Prais escape probability, intergenerational Pearson r, corner odds ratios
 - **STDIO transport**: The server communicates via standard input/output, compatible with Claude Desktop and other MCP clients
 
 ## Project Structure / Estructura del proyecto
@@ -151,37 +172,57 @@ All 23 tests cover weighted statistics, transition matrix computation, and varia
 emovi-mcp/
 ├── pyproject.toml
 ├── README.md
+├── LICENSE
+├── CONTRIBUTING.md
+├── .github/workflows/
+│   ├── ci.yml                    # CI: pytest on Python 3.10/3.11/3.12
+│   └── publish.yml               # Publish to PyPI on release
 ├── scripts/
-│   └── build_dictionary.py      # One-time dictionary builder
+│   ├── build_dictionary.py       # One-time dictionary builder
+│   └── validate_ceey.py          # Validate against CEEY 2025 reference
+├── validation/
+│   └── ceey_reference_values.json # CEEY reference matrices
 ├── src/emovi_mcp/
 │   ├── __init__.py
-│   ├── __main__.py              # python -m emovi_mcp
-│   ├── main.py                  # FastMCP server entry point
-│   ├── config.py                # Environment, mappings, constants
-│   ├── data_loader.py           # Lazy .dta loader with cache
-│   ├── dictionary.py            # Variable dictionary (JSON-based)
-│   ├── stats_engine.py          # Transition matrices, descriptives
+│   ├── __main__.py               # python -m emovi_mcp
+│   ├── main.py                   # FastMCP server entry point
+│   ├── config.py                 # Environment, mappings, constants
+│   ├── data_loader.py            # Lazy .dta loader with cache
+│   ├── dictionary.py             # Variable dictionary (JSON-based)
+│   ├── stats_engine.py           # Transition matrices, descriptives
 │   ├── data/
-│   │   └── dictionary.json      # 792 variables
+│   │   └── dictionary.json       # 792 variables
 │   ├── helpers/
-│   │   ├── formatting.py        # Markdown formatters for LLM output
-│   │   ├── labels.py            # Value label resolution
-│   │   ├── validation.py        # Column + filter validation
-│   │   └── weights.py           # Weighted mean, median, quantile, freq
+│   │   ├── formatting.py         # Markdown formatters for LLM output
+│   │   ├── labels.py             # Value label resolution
+│   │   ├── mobility_indices.py   # Shorrocks, Prais, odds ratios
+│   │   ├── survey_variance.py    # Taylor linearization for SE/CI
+│   │   ├── validation.py         # Column + filter validation
+│   │   ├── visualization.py      # Heatmaps, Sankey, bar charts
+│   │   └── weights.py            # Weighted mean, median, quantile, freq
 │   └── tools/
-│       ├── __init__.py           # Tool registration
-│       ├── compare.py            # compare_groups
-│       ├── describe.py           # describe_survey
-│       ├── mobility.py           # transition_matrix
-│       ├── stats.py              # weighted_stats
-│       ├── subset.py             # filter_data
-│       ├── tabulate.py           # tabulate
-│       └── variables.py          # list_variables, variable_detail
+│       ├── __init__.py            # Tool registration (11 tools)
+│       ├── compare.py             # compare_groups
+│       ├── describe.py            # describe_survey
+│       ├── financial.py           # financial_inclusion_summary
+│       ├── mobility.py            # transition_matrix
+│       ├── stats.py               # weighted_stats
+│       ├── subset.py              # filter_data
+│       ├── tabulate.py            # tabulate
+│       ├── temporal.py            # income_comparison
+│       ├── variables.py           # list_variables, variable_detail
+│       └── visualize.py           # visualize_mobility
 └── tests/
-    ├── conftest.py               # Shared fixtures (synthetic data)
+    ├── conftest.py                # Shared fixtures (synthetic data)
     ├── test_dictionary.py
+    ├── test_financial.py
     ├── test_mobility.py
-    └── test_stats_engine.py
+    ├── test_mobility_indices.py
+    ├── test_stats_engine.py
+    ├── test_survey_variance.py
+    ├── test_temporal.py
+    ├── test_visualization.py
+    └── test_wealth_index.py
 ```
 
 ## License / Licencia

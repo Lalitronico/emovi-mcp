@@ -115,3 +115,20 @@ class TestTransitionMatrix:
         assert "upward_mobility_avg" in summary
         assert "downward_mobility_avg" in summary
         assert summary["n_unweighted"] > 0
+
+    def test_origin_filter_valid(self, mobility_df):
+        """Filter to only origin category 1."""
+        result = compute_transition_matrix(
+            mobility_df, dimension="education", origin_filter=1
+        )
+        assert "all" in result["matrices"]
+        # The matrix should only have rows with origin=1
+        summary = result["summary"]["all"]
+        assert summary["n_unweighted"] < len(mobility_df)
+
+    def test_origin_filter_no_match(self, mobility_df):
+        """Filter to an origin category that doesn't exist."""
+        result = compute_transition_matrix(
+            mobility_df, dimension="education", origin_filter=99
+        )
+        assert result["matrices"] == {}

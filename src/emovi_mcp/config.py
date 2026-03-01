@@ -67,6 +67,62 @@ WEIGHT_COL = "factor"
 PSU_COL = "upm_muestra"
 STRATA_COL = "est"
 
+# Per-dataset weight columns
+WEIGHT_COLUMNS: dict[str, str] = {
+    "entrevistado": "factor",
+    "hogar": "factor",
+    "ingreso_2017": "factor",
+    "inclusion_financiera": "fac_inc",
+}
+
+
+def get_weight_col(dataset: str) -> str:
+    """Return the appropriate weight column for a dataset."""
+    return WEIGHT_COLUMNS.get(dataset, WEIGHT_COL)
+
+
+# ---------------------------------------------------------------------------
+# Poverty lines from CEEY .do file (monthly per capita, MXN)
+# ---------------------------------------------------------------------------
+
+POVERTY_LINES = {
+    2023: {
+        "moderate": {"rural": 3_165.34, "urban": 4_386.21},
+        "extreme": {"rural": 1_701.52, "urban": 2_224.83},
+    },
+    2017: {
+        "moderate": {"rural": 2_234.15, "urban": 3_191.54},
+        "extreme": {"rural": 1_130.92, "urban": 1_491.07},
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Financial inclusion dimensions
+# ---------------------------------------------------------------------------
+
+FINANCIAL_INCLUSION_DIMENSIONS: dict[str, dict] = {
+    "savings": {
+        "description": "Ahorro formal e informal",
+        "variables": ["p6_1", "p6_2", "p6_3", "p6_4", "p6_5", "p6_6"],
+    },
+    "credit": {
+        "description": "Acceso a credito y deuda",
+        "variables": ["p7_1", "p7_2", "p7_3", "p7_4", "p7_5"],
+    },
+    "banking": {
+        "description": "Servicios bancarios y productos financieros",
+        "variables": ["p4_1", "p4_2", "p4_3", "p4_4", "p4_5"],
+    },
+    "literacy": {
+        "description": "Educacion financiera y conocimientos",
+        "variables": ["p10_1", "p10_2", "p10_3", "p10_4"],
+    },
+    "discrimination": {
+        "description": "Discriminacion en servicios financieros",
+        "variables": ["p12_1", "p12_2", "p12_3"],
+    },
+}
+
 # ---------------------------------------------------------------------------
 # Region mappings (from .do file)
 # ---------------------------------------------------------------------------

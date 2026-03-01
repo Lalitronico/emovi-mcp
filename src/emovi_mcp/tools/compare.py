@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from emovi_mcp.config import WEIGHT_COL
+from emovi_mcp.config import get_weight_col
 from emovi_mcp.data_loader import get_dataframe
 from emovi_mcp.helpers.formatting import df_to_markdown
 from emovi_mcp.helpers.validation import apply_filter, validate_column
@@ -38,15 +38,16 @@ def register(mcp: FastMCP):
         Returns a comparison table showing the metric for each group.
         """
         df = get_dataframe(dataset)
+        weight_col = get_weight_col(dataset)
         work = apply_filter(df, filter)
         validate_column(work, variable)
         validate_column(work, group_var)
-        validate_column(work, WEIGHT_COL)
+        validate_column(work, weight_col)
 
         rows = []
         for group_val, group_df in work.groupby(group_var):
             vals = group_df[variable]
-            wts = group_df[WEIGHT_COL]
+            wts = group_df[weight_col]
 
             if metric == "mean":
                 value = weighted_mean(vals, wts)

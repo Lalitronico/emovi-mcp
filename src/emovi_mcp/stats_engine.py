@@ -74,6 +74,37 @@ def build_wealth_quintiles(
 
 
 # ---------------------------------------------------------------------------
+# Income merge (temporal comparison)
+# ---------------------------------------------------------------------------
+
+def merge_income_2017(
+    df_ent: pd.DataFrame, df_ing: pd.DataFrame
+) -> pd.DataFrame:
+    """Left-join 2017 income onto the entrevistado dataset on folio.
+
+    Returns a copy of df_ent with 'ingc_pc_2017' added from df_ing.
+    """
+    # Identify the income column in the 2017 dataset
+    ing_col = None
+    for candidate in ("ingc_pc", "ingpc", "ingreso_pc", "ing_pc"):
+        if candidate in df_ing.columns:
+            ing_col = candidate
+            break
+    if ing_col is None:
+        # Use the first non-folio numeric column
+        for c in df_ing.columns:
+            if c != "folio" and pd.api.types.is_numeric_dtype(df_ing[c]):
+                ing_col = c
+                break
+    if ing_col is None:
+        raise ValueError("Cannot identify income column in ingreso_2017 dataset")
+
+    right = df_ing[["folio", ing_col]].rename(columns={ing_col: "ingc_pc_2017"})
+    merged = df_ent.merge(right, on="folio", how="left")
+    return merged
+
+
+# ---------------------------------------------------------------------------
 # Transition matrix
 # ---------------------------------------------------------------------------
 
@@ -83,6 +114,8 @@ def compute_transition_matrix(
     filter_expr: str | None = None,
     by: str | None = None,
     weight_col: str = WEIGHT_COL,
+    origin_filter: int | None = None,
+    compute_se: bool = False,
 ) -> dict:
     """Compute a weighted transition matrix for a mobility dimension.
 
@@ -114,6 +147,10 @@ def compute_transition_matrix(
     # Drop rows where origin, dest, or weight is missing
     valid = work["_origin"].notna() & work["_dest"].notna() & work[weight_col].notna()
     work = work[valid]
+
+    # Optional: filter to a single origin category
+    if origin_filter is not None:
+        work = work[work["_origin"] == origin_filter]
 
     if len(work) == 0:
         return {"matrices": {}, "summary": {}, "dimension_info": dim_config}
@@ -179,10 +216,43 @@ def compute_transition_matrix(
         matrices["all"] = m
         summaries["all"] = _summary(m, len(work))
 
+    # Compute formal mobility indices
+    try:
+        from emovi_mcp.helpers.mobility_indices import (
+            compute_all_indices,
+        )
+        for key, m in matrices.items():
+            summaries[key].update(compute_all_indices(m, work, weight_col))
+    except ImportError:
+        pass
+
+    # Compute standard errors for matrix cells
+    se_matrices = {}
+    if compute_se:
+        try:
+            from emovi_mcp.helpers.survey_variance import (
+                transition_matrix_standard_errors,
+            )
+            from emovi_mcp.config import PSU_COL, STRATA_COL
+            se_func = transition_matrix_standard_errors
+            if by and by in work.columns:
+                for gval, gdf in work.groupby(by):
+                    gkey = str(gval)
+                    se_matrices[gkey] = se_func(
+                        gdf, "_origin", "_dest", weight_col, PSU_COL, STRATA_COL, labels
+                    )
+            else:
+                se_matrices["all"] = se_func(
+                    work, "_origin", "_dest", weight_col, PSU_COL, STRATA_COL, labels
+                )
+        except ImportError:
+            pass
+
     return {
         "matrices": matrices,
         "summary": summaries,
         "dimension_info": dim_config,
+        "se_matrices": se_matrices,
     }
 
 

@@ -1,0 +1,52 @@
+{
+  "_metadata": {
+    "source": "Informe de Movilidad Social en Mexico 2025 — CEEY",
+    "survey": "ESRU-EMOVI 2023",
+    "note": "Values extracted from CEEY .do file output and published tables. Matrices are row-normalized transition probabilities.",
+    "methodology": "MCA for wealth quintiles (CEEY) vs PCA for our implementation — expect small deviations",
+    "date_extracted": "2026-03-01"
+  },
+  "education_4cat": {
+    "description": "Movilidad educativa intergeneracional (4 categorias)",
+    "labels": ["Primaria o menos", "Secundaria", "Media superior", "Profesional"],
+    "matrix": [
+      [0.224, 0.329, 0.272, 0.175],
+      [0.050, 0.212, 0.372, 0.366],
+      [0.018, 0.075, 0.327, 0.580],
+      [0.009, 0.027, 0.132, 0.832]
+    ],
+    "notes": "From .do file lines ~700-750. Approximate values — may differ slightly from final published tables."
+  },
+  "occupation_6cat": {
+    "description": "Movilidad ocupacional intergeneracional (6 categorias)",
+    "labels": [
+      "Manual baja calificacion",
+      "Manual alta calificacion",
+      "Comercio",
+      "No manual baja calificacion",
+      "No manual alta calificacion",
+      "Agricola"
+    ],
+    "matrix": null,
+    "notes": "Occupational mobility matrix not fully extractable from .do file — requires running the program on real data. To be populated after validation run."
+  },
+  "wealth_quintiles": {
+    "description": "Movilidad por quintiles de riqueza (indice de activos)",
+    "labels": ["Q1", "Q2", "Q3", "Q4", "Q5"],
+    "matrix": null,
+    "notes": "CEEY uses MCA (Multiple Correspondence Analysis) for the wealth index while our implementation uses PCA. Direct cell-by-cell comparison expected to show systematic differences. CEEY published diagonal persistence ~35-40% range."
+  },
+  "summary_indicators": {
+    "education": {
+      "diagonal_persistence_approx": 0.40,
+      "upward_mobility_approx": 0.42,
+      "notes": "Approximate aggregate from published figures"
+    },
+    "wealth": {
+      "q1_persistence_ceey_approx": 0.45,
+      "q5_persistence_ceey_approx": 0.48,
+      "diagonal_persistence_approx": 0.37,
+      "notes": "MCA-based. Our PCA approach shows Q1=48.4%, Q5=50.4%, diagonal=36.2%"
+    }
+  }
+}
